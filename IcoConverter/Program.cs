@@ -30,9 +30,9 @@ namespace IcoConverter
        Unknown, PNG, JPEG, BMP, GIF, TIFF, WMP
     }
 
-    class Program
+    public class Program
     {
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.WriteLine();
             Console.WriteLine("IcoConverter - Extracts images from .ICO files");
@@ -130,7 +130,8 @@ namespace IcoConverter
                 // of the passed .ICO file.
                 if (String.IsNullOrEmpty(destinationDir))
                 {
-                    destinationDir = Path.GetDirectoryName(input); // Output directory
+                    
+                    destinationDir = Path.GetDirectoryName(Path.GetFullPath(input)); // Output directory
                 }
 
                 // Extract the icons.
