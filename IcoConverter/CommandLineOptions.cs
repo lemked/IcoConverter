@@ -14,7 +14,7 @@ namespace IcoConverter
         [Option('f', "format", Required = false, HelpText = "File format.")]
         public string OutputFileFormat { get; set; }
 
-        [Option('d', "dest", Required = false, HelpText = "Destination directory.")]
+        [Option('d', "destination", Required = false, HelpText = "Destination directory.")]
         public string DestinationDirectory { get; set; }
     }
 }

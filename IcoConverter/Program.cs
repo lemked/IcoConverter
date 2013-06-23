@@ -250,12 +250,22 @@ namespace IcoConverter
         private static void ShowUsage()
         {
             Console.WriteLine("  Usage:");
-            Console.WriteLine("     IcoConverter <ICO file or directory>");
+            Console.WriteLine();
+            Console.WriteLine("     IcoConverter <ico_file|ico_directory>");
+            Console.WriteLine("     IcoConverter -i <file|directory> [-d <dest_directory>] [-f <format>]");
+            Console.WriteLine();
+            Console.WriteLine("  Arguments:");
+            Console.WriteLine();
+            Console.WriteLine("     -i | --input <file|directory>  : .ICO file or directory with .ICO files.");
+            Console.WriteLine("     -d | --destination <directory> : Destination directory for the images.");
+            Console.WriteLine("     -f | --format <fileformat>     : File format of the extracted images.");
+            Console.WriteLine("                                      Supported: PNG, BMP, JPEG, GIF, TIFF, WMP");
             Console.WriteLine();
             Console.WriteLine("  Samples:");
+            Console.WriteLine();
             Console.WriteLine("     IcoConverter Foo.ico");
             Console.WriteLine("     IcoConverter C:\\MyIconCollection\\");
-            Console.WriteLine("     IcoConverter -i Foo.ico -d C:\\DestinationDir\\ -f PNG");
+            Console.WriteLine("     IcoConverter -i Foo.ico -d C:\\DestinationDir\\ -f BMP");
         }
     }
 }
