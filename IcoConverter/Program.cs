@@ -141,7 +141,13 @@ namespace IcoToPng
 
         private static void ShowUsage()
         {
-            Console.Write("IcoConverter <ICO file or directory> [destination directory]");
+            Console.WriteLine("  Usage:");
+            Console.WriteLine("     IcoConverter <ICO file or directory> [destination directory]");
+            Console.WriteLine();
+            Console.WriteLine("  Samples:");
+            Console.WriteLine("     IcoConverter Foo.ico");
+            Console.WriteLine("     IcoConverter Foo.ico C:\\DestinationDir\\");
+            Console.WriteLine("     IcoConverter C:\\MyIconCollection\\ C:\\DestinationDir\\");
         }
     }
 }
