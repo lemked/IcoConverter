@@ -2,9 +2,9 @@ IcoConverter - Extracts images from .ICO files
 
 Copyright (C) 2013 - Daniel Lemke <lemked@web.de>
 
-This application can be used to extract images from a .ICO 
+This application can be used to extract images from an .ICO 
 file or a directory that contains .ICO files and save them
-into a image format like .PNG.
+into an image format like .PNG, .BMP or .GIF.
 
   Usage:
 
