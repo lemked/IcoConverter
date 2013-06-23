@@ -1,7 +1,7 @@
 ﻿/*
 
     IcoConverter - Extracts images from .ICO files
-    Copyright (C) 2013  Daniel Lemke <lemked@web.de>
+    Copyright (C) 2013 - Daniel Lemke <lemked@web.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,37 +21,95 @@
 using System;
 using System.IO;
 using System.Windows.Media.Imaging;
+using CommandLine;
 
-namespace IcoToPng
+namespace IcoConverter
 {
+    public enum FileFormat
+    {
+       Unknown, PNG, JPEG, BMP
+    }
+
     class Program
     {
         private static void Main(string[] args)
         {
             Console.WriteLine();
             Console.WriteLine("IcoConverter - Extracts images from .ICO files");
-            Console.WriteLine("Copyright (C) 2013  Daniel Lemke <lemked@web.de>");
+            Console.WriteLine("Copyright (C) 2013 - Daniel Lemke <lemked@web.de>");
             Console.WriteLine();
 
-            if (args.Length.Equals(0) || args[0].Equals("/?") || args[0].Equals("-h"))
+            if (args.Length.Equals(0))
             {
                 ShowUsage();
                 return;
             }
 
-            var lFileOrDirectory = args[0]; // .ICO filename or directory
+            string input = String.Empty;
+            string destinationDir = String.Empty;
+            
+            // Use PNG as default output file format.
+            FileFormat fileFormat = FileFormat.PNG;
 
-            string lOutputDir = String.Empty;
-            if (args.Length > 1 && !String.IsNullOrEmpty(args[1]))
+            //Parse Command Line
+            var commandLineOptions = new CommandLineOptions();
+            var parser = new Parser();
+            if (parser.ParseArguments(args, commandLineOptions))
             {
-                lOutputDir = args[1];
+                if (commandLineOptions.ShowHelp)
+                {
+                    ShowUsage();
+                    return;
+                }
+
+                if (!String.IsNullOrEmpty(commandLineOptions.Input))
+                {
+                    input = commandLineOptions.Input;
+                }
+
+                if (!String.IsNullOrEmpty(commandLineOptions.DestinationDirectory))
+                {
+                    destinationDir = commandLineOptions.DestinationDirectory;
+                }
+
+                // Parse the file format from the command line
+                if (!String.IsNullOrEmpty(commandLineOptions.OutputFileFormat))
+                {
+                    if (ParseFileFormat(commandLineOptions.OutputFileFormat) == FileFormat.Unknown)
+                    {
+                        Console.WriteLine("{0} is not a supported file format. Please specify PNG, BMP or JPEG instead.", commandLineOptions.OutputFileFormat);
+                        return;
+                    }
+                    fileFormat = ParseFileFormat(commandLineOptions.OutputFileFormat);
+                }
+            }
+            else
+            {
+                ShowUsage();
+                return;
+            }
+            
+            if (String.IsNullOrEmpty(input))
+            {
+                input = args[0];
+                if (input.StartsWith("-"))
+                {
+                    Console.WriteLine("Please specify a .ICO file or a directory which contains .ICO files.");
+                    return;
+                }
             }
 
-            if (!String.IsNullOrEmpty(lOutputDir) && !Directory.Exists(lOutputDir))
+            if (!File.Exists(input) && !Directory.Exists(input))
+            {
+                Console.WriteLine(".ICO file or directory not found.");
+                return;
+            }
+
+            if (!String.IsNullOrEmpty(destinationDir) && !Directory.Exists(destinationDir))
             {
                 try
                 {
-                    Directory.CreateDirectory(lOutputDir);
+                    Directory.CreateDirectory(destinationDir);
                 }
                 catch (UnauthorizedAccessException ex)
                 {
@@ -66,39 +124,54 @@ namespace IcoToPng
             }
 
             // Check if the given parameter is an existing file.
-            if (File.Exists(lFileOrDirectory))
+            if (File.Exists(input))
             {
                 // If no output directory defined, use that
                 // of the passed .ICO file.
-                if (String.IsNullOrEmpty(lOutputDir))
+                if (String.IsNullOrEmpty(destinationDir))
                 {
-                    lOutputDir = Path.GetDirectoryName(lFileOrDirectory); // Output directory
+                    destinationDir = Path.GetDirectoryName(input); // Output directory
                 }
 
                 // Extract the icons.
-                ExtractIcon(lFileOrDirectory, lOutputDir);
+                ExtractIcon(input, destinationDir, fileFormat);
                 return;
             }
 
             // If a diretory was passed, find and extract .ICO files of that directory.
-            if (Directory.Exists(lFileOrDirectory))
+            if (Directory.Exists(input))
             {
                 // If no output directory defined, use that
                 // of the passed .ICO file.
-                if (String.IsNullOrEmpty(lOutputDir))
+                if (String.IsNullOrEmpty(destinationDir))
                 {
-                    lOutputDir = lFileOrDirectory; // Output directory
+                    destinationDir = input; // Output directory
                 }
 
-                var lFiles = Directory.GetFiles(lFileOrDirectory, "*.ico");
+                var lFiles = Directory.GetFiles(input, "*.ico");
                 foreach (var lFilePath in lFiles)
                 {
-                    ExtractIcon(lFilePath, lOutputDir);
+                    ExtractIcon(lFilePath, destinationDir, fileFormat);
                 }
             }
         }
 
-        private static void ExtractIcon(string pFilePath, string pOutputDirectory)
+        private static FileFormat ParseFileFormat(string pFileFormat)
+        {
+            var fileFormat = pFileFormat.ToUpper();
+            switch (fileFormat)
+            {
+                case "PNG": return FileFormat.PNG;
+                case "BMP": return FileFormat.BMP;
+                case "JPG":
+                case "JPEG": 
+                    return FileFormat.JPEG;
+            }
+
+            return FileFormat.Unknown;
+        }
+
+        private static void ExtractIcon(string pFilePath, string pOutputDirectory, FileFormat pFileFormat)
         {
             var lFileName = Path.GetFileName(pFilePath);
             var lIconStream = new FileStream(pFilePath, FileMode.Open);
@@ -107,22 +180,41 @@ namespace IcoToPng
             // Iterate over contained images and save them.
             foreach (var lBitmapFrame in lBitmapDecoder.Frames)
             {
+                BitmapEncoder lEncoder;
+                string fileExtension = String.Empty;
+
                 // save file as PNG
-                var lPngBitmapEncoder = new PngBitmapEncoder();
-                lPngBitmapEncoder.Frames.Add(lBitmapFrame);
+                switch (pFileFormat)
+                {
+                    case FileFormat.PNG: 
+                        lEncoder = new PngBitmapEncoder();
+                        fileExtension = "png";
+                        break;
+                    case FileFormat.BMP: 
+                        lEncoder = new BmpBitmapEncoder();
+                        fileExtension = "bmp";
+                        break;
+                    case FileFormat.JPEG: 
+                        lEncoder = new JpegBitmapEncoder();
+                        fileExtension = "jpg";
+                        break;
+                    default: lEncoder = new PngBitmapEncoder(); break;
+                }
+                
+                lEncoder.Frames.Add(lBitmapFrame);
                 var lDimension = lBitmapFrame.PixelHeight;
                 // Append backslash if required.
                 if (!pOutputDirectory.EndsWith(@"\"))
                 {
                     pOutputDirectory += @"\";
                 }
-                var lOutputFileName = String.Format("{0}_{1}x{1}.png", Path.GetFileNameWithoutExtension(lFileName), lDimension);
+                var lOutputFileName = String.Format("{0}_{1}x{1}.{2}", Path.GetFileNameWithoutExtension(lFileName), lDimension, fileExtension);
                 var lOutputFilePath = pOutputDirectory + lOutputFileName;
                 try
                 {
                     using (var lStream = new FileStream(lOutputFilePath, FileMode.Create)) 
                     {
-                        lPngBitmapEncoder.Save(lStream);
+                        lEncoder.Save(lStream);
                     }
                 }
                 catch(UnauthorizedAccessException ex)
@@ -142,12 +234,12 @@ namespace IcoToPng
         private static void ShowUsage()
         {
             Console.WriteLine("  Usage:");
-            Console.WriteLine("     IcoConverter <ICO file or directory> [destination directory]");
+            Console.WriteLine("     IcoConverter <ICO file or directory>");
             Console.WriteLine();
             Console.WriteLine("  Samples:");
             Console.WriteLine("     IcoConverter Foo.ico");
-            Console.WriteLine("     IcoConverter Foo.ico C:\\DestinationDir\\");
-            Console.WriteLine("     IcoConverter C:\\MyIconCollection\\ C:\\DestinationDir\\");
+            Console.WriteLine("     IcoConverter C:\\MyIconCollection\\");
+            Console.WriteLine("     IcoConverter -i Foo.ico -d C:\\DestinationDir\\ -f PNG");
         }
     }
 }
