@@ -27,7 +27,7 @@ namespace IcoConverter
 {
     public enum FileFormat
     {
-       Unknown, PNG, JPEG, BMP
+       Unknown, PNG, JPEG, BMP, GIF, TIFF, WMP
     }
 
     class Program
@@ -77,7 +77,7 @@ namespace IcoConverter
                 {
                     if (ParseFileFormat(commandLineOptions.OutputFileFormat) == FileFormat.Unknown)
                     {
-                        Console.WriteLine("{0} is not a supported file format. Please specify PNG, BMP or JPEG instead.", commandLineOptions.OutputFileFormat);
+                        Console.WriteLine("{0} is not a supported output file format. Supported formats are PNG, BMP, JPEG, GIF, TIFF and WMP.", commandLineOptions.OutputFileFormat);
                         return;
                     }
                     fileFormat = ParseFileFormat(commandLineOptions.OutputFileFormat);
@@ -161,11 +161,14 @@ namespace IcoConverter
             var fileFormat = pFileFormat.ToUpper();
             switch (fileFormat)
             {
-                case "PNG": return FileFormat.PNG;
-                case "BMP": return FileFormat.BMP;
-                case "JPG":
+                case "PNG" : return FileFormat.PNG;
+                case "BMP" : return FileFormat.BMP;
+                case "JPG" :
                 case "JPEG": 
                     return FileFormat.JPEG;
+                case "GIF" : return FileFormat.GIF;
+                case "TIFF": return FileFormat.TIFF;
+                case "WMP" : return FileFormat.WMP;
             }
 
             return FileFormat.Unknown;
@@ -180,7 +183,7 @@ namespace IcoConverter
             // Iterate over contained images and save them.
             foreach (var lBitmapFrame in lBitmapDecoder.Frames)
             {
-                BitmapEncoder lEncoder;
+                BitmapEncoder lEncoder = null;
                 string fileExtension = String.Empty;
 
                 // save file as PNG
@@ -198,8 +201,21 @@ namespace IcoConverter
                         lEncoder = new JpegBitmapEncoder();
                         fileExtension = "jpg";
                         break;
-                    default: lEncoder = new PngBitmapEncoder(); break;
+                    case FileFormat.GIF:
+                        lEncoder = new GifBitmapEncoder();
+                        fileExtension = "gif";
+                        break;
+                    case FileFormat.TIFF:
+                        lEncoder = new TiffBitmapEncoder();
+                        fileExtension = "tiff";
+                        break;
+                    case FileFormat.WMP:
+                        lEncoder = new WmpBitmapEncoder();
+                        fileExtension = "hdp";
+                        break;
                 }
+
+                if (lEncoder == null) return;
                 
                 lEncoder.Frames.Add(lBitmapFrame);
                 var lDimension = lBitmapFrame.PixelHeight;
