@@ -219,13 +219,22 @@ namespace IcoConverter
                 if (lEncoder == null) return;
                 
                 lEncoder.Frames.Add(lBitmapFrame);
+                
+                // Get bitness
+                // For some reason, the thumbnail contains that information while Frame.Format is always 32, see the following thread:
+                // http://social.msdn.microsoft.com/Forums/vstudio/en-US/e46a9ad8-d65e-4aad-92c0-04d57d415065/a-bug-that-renders-iconbitmapdecoder-useless
+                var lBitness = lBitmapFrame.Thumbnail.Format.BitsPerPixel;
+                
+                // Get dimension
                 var lDimension = lBitmapFrame.PixelHeight;
-                // Append backslash if required.
+                
+                // Append backslash four output directory if required.
                 if (!pOutputDirectory.EndsWith(@"\"))
                 {
                     pOutputDirectory += @"\";
                 }
-                var lOutputFileName = String.Format("{0}_{1}x{1}.{2}", Path.GetFileNameWithoutExtension(lFileName), lDimension, fileExtension);
+                
+                var lOutputFileName = String.Format("{0}_{1}bit_{2}x{2}.{3}", Path.GetFileNameWithoutExtension(lFileName), lBitness, lDimension, fileExtension);
                 var lOutputFilePath = pOutputDirectory + lOutputFileName;
                 try
                 {
